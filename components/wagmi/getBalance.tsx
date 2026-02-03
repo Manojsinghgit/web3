@@ -10,6 +10,10 @@ const USDC_BY_CHAIN: Record<number, string> = {
   11155111: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
 };
 
+const USDT_BY_CHAIN: Record<number, string> = {
+  137: "0xC2132D05D31c914a87C6611C10748AaCBbA7A9e8",
+};
+
 const ERC20_ABI = [
   "function balanceOf(address) view returns (uint256)",
   "function decimals() view returns (uint8)",
@@ -21,6 +25,7 @@ export function Balance() {
   const { provider: web3AuthProvider } = useWeb3Auth();
   const [nativeBalance, setNativeBalance] = useState("0.00");
   const [usdcBalance, setUsdcBalance] = useState("0.00");
+  const [usdtBalance, setUsdtBalance] = useState("0.00");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,6 +51,16 @@ export function Balance() {
         } else {
           setUsdcBalance("0.00");
         }
+
+        const usdtAddress = USDT_BY_CHAIN[activeChainId];
+        if (usdtAddress) {
+          const erc20 = new Contract(usdtAddress, ERC20_ABI, provider);
+          const raw = await erc20.balanceOf(address);
+          const decimals = await erc20.decimals();
+          setUsdtBalance(formatUnits(raw, decimals));
+        } else {
+          setUsdtBalance("0.00");
+        }
       } catch (err: any) {
         setError(err?.message || "Failed to fetch balance.");
       } finally {
@@ -61,6 +76,7 @@ export function Balance() {
       <h2>Balance</h2>
       <div>Native: {nativeBalance} {isLoading && "Loading..."}</div>
       <div>USDC: {usdcBalance}</div>
+      <div>USDT: {usdtBalance}</div>
       {error && <div>Error: {error}</div>}
     </div>
   )
