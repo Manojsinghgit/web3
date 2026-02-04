@@ -1,1 +1,15 @@
-/* Global styles will be added here */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+  body {
+    background: linear-gradient(160deg, #F4F1EC 0%, #EFEAE3 50%, #E7E2DA 100%);
+    background-attachment: fixed;
+    color: #111827;
+    min-height: 100vh;
+  }
+}
