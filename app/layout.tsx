@@ -10,6 +10,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: "TopupGo",
+  
   description: "TopupGo Portal",
 };
 
