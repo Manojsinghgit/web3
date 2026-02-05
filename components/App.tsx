@@ -5,7 +5,7 @@ import { useAccount, useChainId, useSwitchChain } from "wagmi";
 import { SendTransaction } from "./wagmi/sendTransaction";
 import { Balance } from "./wagmi/getBalance";
 import { POLYGON_CHAIN_ID } from "./wagmi/config";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
 function App() {
@@ -27,6 +27,8 @@ function App() {
   // User info state: Fetch user info directly from provider on refresh
   // useWeb3AuthUser() hook might not sync immediately on refresh, so we fetch directly
   const [userInfo, setUserInfo] = useState<any>(null);
+  const [balanceRefreshTrigger, setBalanceRefreshTrigger] = useState(0);
+  const handlePaymentSuccess = useCallback(() => setBalanceRefreshTrigger((n) => n + 1), []);
 
   /**
    * FIX: Session Persistence on Page Refresh
@@ -300,8 +302,8 @@ function App() {
       <div className="mx-auto max-w-7xl px-6 py-8">
         {/* TOP ROW */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 mb-6">
-          {/* Left: Available Balance */}
-          <Balance />
+          {/* Left: Available Balance – refresh har 1 min + payment success pe */}
+          <Balance refreshTrigger={balanceRefreshTrigger} />
 
           {/* Right: Top Up */}
           <div className="rounded-[18px] bg-white p-6" style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
@@ -339,7 +341,7 @@ function App() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Left: Send Payment */}
           <div className="rounded-[18px] bg-white p-6" style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-            <SendTransaction />
+            <SendTransaction onPaymentSuccess={handlePaymentSuccess} />
           </div>
 
           {/* Right: Profile */}
@@ -375,6 +377,27 @@ function App() {
                 {userInfo?.email || "user@example.com"}
               </p>
             </div>
+            {/* Wallet address copy */}
+            {address && (
+              <div className="flex items-center justify-center gap-2 rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2.5">
+                <span className="truncate text-xs font-medium text-gray-600" title={address}>
+                  {`${address.slice(0, 6)}...${address.slice(-4)}`}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(address);
+                    toast.success('Address copied!');
+                  }}
+                  className="flex-shrink-0 rounded p-1.5 text-gray-500 transition hover:bg-gray-200 hover:text-gray-700"
+                  title="Copy address"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </button>
+              </div>
+            )}
             {/* <button
               onClick={() => uiConsole(userInfo)}
               className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
