@@ -9,7 +9,7 @@ import "../lib/server-localStorage-polyfill";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Web3Auth NextJS Quick Start",
+  title: "TopupGo",
   description: "Web3Auth NextJS Quick Start",
 };
 
