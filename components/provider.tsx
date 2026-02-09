@@ -20,8 +20,33 @@ const web3AuthContextConfig: Web3AuthContextConfig = {
       // Session persistence: Web3Auth automatically saves session in cookies
       // This ensures user stays logged in after page refresh
       uiConfig: {
-        defaultLanguage: 'en',
+        defaultLanguage: "en",
+        loginMethodsOrder: ["google", "twitter", "facebook", "email_passwordless", "sms_passwordless"],
       },
+      modalConfig: {
+        hideWalletDiscovery: true,
+        connectors: {
+          auth: {
+            label: "Social Login",
+            showOnModal: true,
+            loginMethods: {
+              google: { name: "Google", showOnModal: true },
+              twitter: { name: "X", showOnModal: true },
+              facebook: { name: "Facebook", showOnModal: true },
+              email_passwordless: { name: "Email", showOnModal: true },
+              sms_passwordless: { name: "Phone", showOnModal: true },
+            },
+          },
+          metamask: {
+            label: "MetaMask",
+            showOnModal: false,
+          },
+          walletconnectv2: {
+            label: "WalletConnect",
+            showOnModal: false,
+          },
+        },
+      } as any,
     }
   };
 

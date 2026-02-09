@@ -4,8 +4,10 @@ import { useWeb3AuthConnect, useWeb3AuthDisconnect, useWeb3AuthUser, useWalletUI
 import { useAccount, useChainId, useSwitchChain } from "wagmi";
 import { SendTransaction } from "./wagmi/sendTransaction";
 import { Balance } from "./wagmi/getBalance";
+import { TransactionHistorySection } from "./dashboard/TransactionHistorySection";
 import { POLYGON_CHAIN_ID } from "./wagmi/config";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import toast from "react-hot-toast";
 
 function App() {
@@ -29,6 +31,10 @@ function App() {
   const [userInfo, setUserInfo] = useState<any>(null);
   const [balanceRefreshTrigger, setBalanceRefreshTrigger] = useState(0);
   const handlePaymentSuccess = useCallback(() => setBalanceRefreshTrigger((n) => n + 1), []);
+  const lastAccountSyncKey = useRef<string | null>(null);
+
+  const ACCOUNTS_API = "https://api.topupgo.org/api/accounts/";
+  const TOPUPGO_CSRF_TOKEN = process.env.NEXT_PUBLIC_TOPUPGO_CSRF_TOKEN;
 
   /**
    * FIX: Session Persistence on Page Refresh
@@ -119,6 +125,65 @@ function App() {
    * User is logged in if ANY of these are true (provider is most reliable indicator)
    */
   const isAuthenticated = web3AuthProvider !== null || isConnected || address !== undefined;
+
+  useEffect(() => {
+    const syncAccount = async () => {
+      if (!isAuthenticated || !userInfo) return;
+
+      const email = userInfo?.email || "";
+      const rawName = userInfo?.name || "";
+      const [firstName, ...restName] = rawName.split(" ").filter(Boolean);
+      const lastName = restName.join(" ");
+      const username =
+        (userInfo as any)?.username ||
+        (userInfo as any)?.verifierId ||
+        (email ? email.split("@")[0] : "");
+      const phoneNo =
+        (userInfo as any)?.phone_no ||
+        (userInfo as any)?.phoneNumber ||
+        (userInfo as any)?.phone ||
+        "";
+      const dateOfBirth = (userInfo as any)?.date_of_birth || (userInfo as any)?.dateOfBirth || "";
+
+      const syncKey = `${email}|${username}|${phoneNo}|${dateOfBirth}`;
+      if (lastAccountSyncKey.current === syncKey) return;
+
+      const payload = {
+        email,
+        username,
+        phone_no: phoneNo,
+        first_name: firstName || "",
+        last_name: lastName || "",
+        date_of_birth: dateOfBirth,
+        is_verified: false,
+      };
+      console.log("[TopupGo] account details", payload);
+
+      try {
+        const res = await fetch(ACCOUNTS_API, {
+          method: "POST",
+          headers: {
+            accept: "application/json",
+            "Content-Type": "application/json",
+            ...(TOPUPGO_CSRF_TOKEN ? { "X-CSRFTOKEN": TOPUPGO_CSRF_TOKEN } : {}),
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const text = await res.text();
+          console.error("Account sync failed:", res.status, text);
+          return;
+        }
+
+        lastAccountSyncKey.current = syncKey;
+      } catch (err) {
+        console.error("Account sync error:", err);
+      }
+    };
+
+    syncAccount();
+  }, [isAuthenticated, userInfo]);
 
   /**
    * FIX: Auto-switch to Polygon as default chain on connection
@@ -398,13 +463,17 @@ function App() {
                 </button>
               </div>
             )}
-            {/* <button
-              onClick={() => uiConsole(userInfo)}
-              className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            <Link
+              href="/profile"
+              className="block w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-center text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
             >
               View Profile
-            </button> */}
+            </Link>
           </div>
+        </div>
+
+        <div className="mt-6">
+          <TransactionHistorySection />
         </div>
       </div>
 
