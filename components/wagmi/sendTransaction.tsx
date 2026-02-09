@@ -68,6 +68,7 @@ export function SendTransaction({ onPaymentSuccess }: { onPaymentSuccess?: () =>
     const formData = new FormData(e.target as HTMLFormElement);
     const username = (formData.get("username") as string)?.trim();
     const amountStr = formData.get("value") as string;
+    console.log("[SendTransaction] submit", { username, amountStr, from: address });
 
     if (!username) {
       toast.error("Please enter a PayAiro tag.");
@@ -104,6 +105,12 @@ export function SendTransaction({ onPaymentSuccess }: { onPaymentSuccess?: () =>
       const provider = new BrowserProvider(web3AuthProvider as any);
       const signer = await provider.getSigner();
       const amountInUnits = parseUnits(amountStr, TOKEN_CONFIG.decimals);
+      console.log("[SendTransaction] resolved recipient", {
+        username,
+        recipientAddress,
+        normalizedRecipient,
+        amountInUnits: amountInUnits.toString(),
+      });
 
       // Check balance on both USDC contracts; use the one that has enough
       let chosenContractAddress: string | null = null;
@@ -128,9 +135,12 @@ export function SendTransaction({ onPaymentSuccess }: { onPaymentSuccess?: () =>
       }
 
       const usdcContract = new Contract(normalizeAddress(chosenContractAddress), ERC20_ABI, signer);
+      console.log("[SendTransaction] using contract", { chosenContractAddress });
       const tx = await usdcContract.transfer(normalizedRecipient, amountInUnits);
+      console.log("[SendTransaction] tx sent", { hash: tx.hash });
       setHash(tx.hash);
       await tx.wait();
+      console.log("[SendTransaction] tx confirmed", { hash: tx.hash });
       toast.success("Payment successful!", { id: "payment" });
     } catch (err: any) {
       setError(err);
